@@ -1,6 +1,26 @@
 @echo off
-title Herramienta para ver Serial Number - Guiratec
+title GUIRATEC - Herramienta para ver Serial Number
 color 0A
+
+:: ================================
+:: PRESENTACIÓN GUIRATEC
+:: ================================
+cls
+echo.
+echo ============================================================
+echo                 *** GUIRATEC - TECNOLOGIA INTELIGENTE ***
+echo ============================================================
+echo.
+echo        Herramienta desarrollada por:
+echo        Ing. Franklin Gutierrez Arizaca
+echo.
+echo        Contacto: fgutierrezarizaca@gmail.com
+echo        Web: www.guiratec.com
+echo.
+echo ============================================================
+echo              Presione una tecla para continuar...
+echo ============================================================
+pause >nul
 
 :inicio
 cls
@@ -74,8 +94,11 @@ pause
 goto fin
 
 :fin
+cls
+echo ================================================
+echo        ¿Deseas volver al menú principal?
+echo ================================================
 echo.
-echo ¿Deseas volver al menú? (S/N)
-set /p volver=
+set /p volver=Escribe S para volver o N para salir: 
 if /I "%volver%"=="S" goto inicio
 exit
