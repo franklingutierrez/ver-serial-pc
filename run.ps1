@@ -9,3 +9,6 @@ Invoke-WebRequest -Uri $batUrl -OutFile $tempBat -UseBasicParsing
 
 # Ejecutar el BAT
 Start-Process -FilePath $tempBat -Wait
+
+# Eliminar el archivo temporal al finalizar 
+Remove-Item $tempBat -Force
