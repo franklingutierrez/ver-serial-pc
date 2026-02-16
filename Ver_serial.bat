@@ -28,71 +28,143 @@ echo ================================================
 echo        HERRAMIENTA PARA VER SERIAL NUMBER
 echo ================================================
 echo.
-echo Selecciona tu version de Windows:
+echo Selecciona el método para obtener el serial:
 echo.
-echo  1) Windows 7
-echo  2) Windows 8 / 8.1
-echo  3) Windows 10
-echo  4) Windows 11
-echo  5) No estoy seguro
+echo  1) Auto (recomendado)
+echo  2) CMD (wmic)
+echo  3) PowerShell (CIM/WMI)
 echo.
-set /p verWin=Elige una opcion: 
+set /p metodo=Elige una opcion: 
 
-if "%verWin%"=="1" goto menuMetodo
-if "%verWin%"=="2" goto menuMetodo
-if "%verWin%"=="3" goto menuMetodo
-if "%verWin%"=="4" goto menuMetodo
-if "%verWin%"=="5" goto menuMetodo
+if "%metodo%"=="1" goto auto
+if "%metodo%"=="2" goto usarCMD
+if "%metodo%"=="3" goto usarPS
 
 echo Opcion invalida...
 pause
 goto inicio
 
-:menuMetodo
-cls
-echo ================================================
-echo     ¿Deseas usar CMD o PowerShell?
-echo ================================================
-echo.
-echo  1) CMD (wmic bios get serialnumber)
-echo  2) PowerShell (Get-WmiObject / Get-CimInstance)
-echo.
-set /p metodo=Elige una opcion: 
+:: ================================
+:: FUNCIÓN PARA VALIDAR SERIAL
+:: ================================
+:validarSerial
+set serial=%1
 
-if "%metodo%"=="1" goto usarCMD
-if "%metodo%"=="2" goto usarPS
+if "%serial%"=="" goto invalido
+if /I "%serial%"=="System Serial Number" goto invalido
+if /I "%serial%"=="To be filled by O.E.M." goto invalido
+if /I "%serial%"=="None" goto invalido
+if /I "%serial%"=="0" goto invalido
 
-echo Opcion invalida...
-pause
-goto menuMetodo
+goto valido
 
-:usarCMD
-cls
-echo ================================================
-echo     SERIAL NUMBER (CMD)
-echo ================================================
+:invalido
+echo ------------------------------------------------
+echo No se encontro un numero de serie valido.
+echo Esto suele ocurrir cuando:
+echo  - El fabricante no registro el serial en la BIOS
+echo  - La PC es ensamblada o generica
+echo  - La placa madre fue reemplazada
 echo.
-wmic bios get serialnumber
+echo Revise la etiqueta fisica del dispositivo:
+echo  - Parte inferior del laptop
+echo  - Interior del case
+echo  - Placa madre
+echo  - Caja original del equipo
+echo ------------------------------------------------
 echo.
 pause
 goto fin
 
+:valido
+echo Serial Number encontrado:
+echo %serial%
+echo.
+pause
+goto fin
+
+:: ================================
+:: MODO AUTOMATICO
+:: ================================
+:auto
+cls
+echo ================================================
+echo     MODO AUTOMATICO - DETECTANDO METODO
+echo ================================================
+echo.
+
+:: Probar WMIC
+for /f "skip=1 tokens=1" %%a in ('wmic bios get serialnumber 2^>nul') do (
+    if not "%%a"=="" (
+        call :validarSerial "%%a"
+        goto fin
+    )
+)
+
+:: Probar PowerShell CIM
+for /f "tokens=1" %%a in ('powershell -command "Get-CimInstance Win32_BIOS | Select -Expand SerialNumber" 2^>nul') do (
+    call :validarSerial "%%a"
+    goto fin
+)
+
+:: Probar PowerShell WMI
+for /f "tokens=1" %%a in ('powershell -command "Get-WmiObject Win32_BIOS | Select -Expand SerialNumber" 2^>nul') do (
+    call :validarSerial "%%a"
+    goto fin
+)
+
+echo No se pudo obtener el serial por ningun metodo.
+pause
+goto fin
+
+:: ================================
+:: MODO CMD
+:: ================================
+:usarCMD
+cls
+echo ================================================
+echo     SERIAL NUMBER (CMD - WMIC)
+echo ================================================
+echo.
+
+for /f "skip=1 tokens=1" %%a in ('wmic bios get serialnumber 2^>nul') do (
+    if not "%%a"=="" (
+        call :validarSerial "%%a"
+        goto fin
+    )
+)
+
+echo WMIC no esta disponible en este sistema.
+pause
+goto fin
+
+:: ================================
+:: MODO POWERSHELL
+:: ================================
 :usarPS
 cls
 echo ================================================
 echo     SERIAL NUMBER (PowerShell)
 echo ================================================
 echo.
-echo Ejecutando PowerShell...
-echo.
-powershell -command "Get-WmiObject Win32_BIOS | Select-Object SerialNumber"
-echo.
-echo Si falla, probando con CIM:
-powershell -command "Get-CimInstance Win32_BIOS | Select-Object SerialNumber"
-echo.
+
+for /f "tokens=1" %%a in ('powershell -command "Get-CimInstance Win32_BIOS | Select -Expand SerialNumber" 2^>nul') do (
+    call :validarSerial "%%a"
+    goto fin
+)
+
+for /f "tokens=1" %%a in ('powershell -command "Get-WmiObject Win32_BIOS | Select -Expand SerialNumber" 2^>nul') do (
+    call :validarSerial "%%a"
+    goto fin
+)
+
+echo No se pudo obtener el serial con PowerShell.
 pause
 goto fin
 
+:: ================================
+:: FIN
+:: ================================
 :fin
 cls
 echo ================================================
